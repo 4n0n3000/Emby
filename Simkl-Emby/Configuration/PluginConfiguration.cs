@@ -2,6 +2,10 @@
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Plugins;
 using System.Linq;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller.Configuration;
+using MediaBrowser.Controller.Entities;
+using System.Collections.Generic;
 
 namespace Simkl.Configuration
 {
@@ -10,15 +14,28 @@ namespace Simkl.Configuration
     /// </summary>
     public class PluginConfiguration : BasePluginConfiguration
     {
+        // TODO: Delete this a couple weeks after the plugin has gotten updated, to avoid any erroneous upgrades from happening when they shouldn't, and to avoid accidentally writing new code that touches it.
         public UserConfig[] userConfigs { get; set; }
+    }
 
-        public PluginConfiguration() {
-            userConfigs = new UserConfig[]{};
-        }
-
-        public UserConfig getByGuid(string guid)
+    public class ConfigurationFactory : IUserConfigurationFactory
+    {
+        public IEnumerable<ConfigurationStore> GetConfigurations()
         {
-            return userConfigs.Where(c => c.guid == guid).FirstOrDefault();
+            return new[]
+            {
+                new SimklConfigStore
+                {
+                     ConfigurationType = typeof(UserConfig),
+                     Key = ConfigKey
+                }
+            };
         }
+
+        public static string ConfigKey = "simkl";
+    }
+
+    public class SimklConfigStore : ConfigurationStore
+    {
     }
 }

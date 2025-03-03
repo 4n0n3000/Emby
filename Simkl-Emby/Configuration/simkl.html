@@ -1,0 +1,47 @@
+﻿<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/simkljs" data-title="Simkl">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
+
+        <form class="auto-center padded-top">
+
+            <div class="loginButtonContainer">
+                <h3>It seems you are not logged in, do you wish to log in?</h3>
+                <button onclick="SimklConfig.startLoginProcess();" is="emby-button" type="button" class="raised button-submit block"><span>Log In</span></button>
+                <button onclick="location.href='https://simkl.com/';" is="emby-button" type="button" class="raised block"><span>Create an account</span></button>
+            </div>
+            <div class="loggingIn">
+                <h2>Logging In</h2>
+                <div class="loginText"></div>
+                <h3 idclass"loginPin"></h3>
+                <span class="loginSecondsRemaining">900</span> seconds remaining
+                <button onclick="SimklConfig.stopLoginProcess();" is="emby-button" type="button" class="raised button-cancel block"><span>Cancel</span></button>
+            </div>
+            <div class="configOptionsContainer">
+                <h3>Hello again <span class="simklName">USERNAME</span>!</h3>
+                <button onclick="SimklConfig.logOut();" is="emby-button" type="button" class="raised button block"><span>Log Out</span></button>
+                <h2>Scrobbling options:</h2>
+                <div class="checkboxcontainer">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" class="scrobbleMovies" />
+                        <span>Autoscrobbling Movies</span>
+                    </label>
+                </div>
+                <div class="checkboxcontainer">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" class="scrobbleShows" />
+                        <span>Autoscrobbling TV Shows</span>
+                    </label>
+                </div>
+                <div class="inputContainer">
+                    <input is="emby-input" class="scr_pct" type="number" min="0" max="100" pattern="[0-9]*" label="Scrobbling percentage:" />
+                    <div class="fieldDescription">
+                        Percentage watched needed to scrobble
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button is="emby-button" type="submit" class="raised button-submit block"><span>${Save}</span></button>
+            </div>
+        </form>
+    </div>
+</div>

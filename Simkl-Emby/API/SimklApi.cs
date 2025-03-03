@@ -11,6 +11,9 @@ using Simkl.Api.Objects;
 using Simkl.Api.Responses;
 using Simkl.Api.Exceptions;
 using MediaBrowser.Model.Dto;
+using Simkl.Configuration;
+using Emby.Web.GenericEdit.Validation;
+using MediaBrowser.Controller.Library;
 
 namespace Simkl.Api
 {
@@ -20,6 +23,7 @@ namespace Simkl.Api
         private readonly IJsonSerializer _json;
         private readonly ILogger _logger;
         private readonly IHttpClient _httpClient;
+        private readonly IUserManager _userManager;
 
         /* BASIC API THINGS */
         public const string BASE_URL = @"https://api.simkl.com";
@@ -50,11 +54,12 @@ namespace Simkl.Api
             return options;
         }
 
-        public SimklApi(IJsonSerializer json, ILogger logger, IHttpClient httpClient)
+        public SimklApi(IJsonSerializer json, ILogger logger, IHttpClient httpClient, IUserManager userManager)
         {
             _json = json;
             _logger = logger;
             _httpClient = httpClient;
+            _userManager = userManager; 
         }
 
         public async Task<CodeResponse> getCode()
@@ -131,10 +136,10 @@ namespace Simkl.Api
         }
 
         /* NOW EVERYTHING RELATED TO SCROBBLING */
-        public async Task<(bool success, BaseItemDto item)> markAsWatched(BaseItemDto item, string userToken)
+        public async Task<(bool success, BaseItemDto item)> markAsWatched(BaseItemDto item, UserConfig userConfig, long embyUserId)
         {
             SimklHistory history = createHistoryFromItem(item);
-            SyncHistoryResponse r = await SyncHistoryAsync(history, userToken);
+            SyncHistoryResponse r = await SyncHistoryAsync(history, userConfig, embyUserId);
             _logger.Debug("Response: " + _json.SerializeToString(r));
             if (history.movies.Count == r.added.movies && history.shows.Count == r.added.shows) return (true, item);
 
@@ -148,7 +153,7 @@ namespace Simkl.Api
                 (history, item) = await getHistoryFromFileName(item, false);
             }
 
-            r = await SyncHistoryAsync(history, userToken);
+            r = await SyncHistoryAsync(history, userConfig, embyUserId);
             _logger.Debug("Response: " + _json.SerializeToString(r));
 
             return (history.movies.Count == r.added.movies && history.shows.Count == r.added.shows, item);
@@ -160,14 +165,19 @@ namespace Simkl.Api
         /// <param name="history">History object</param>
         /// <param name="userToken">User token</param>
         /// <returns></returns>
-        public async Task<SyncHistoryResponse> SyncHistoryAsync(SimklHistory history, string userToken)
+        public async Task<SyncHistoryResponse> SyncHistoryAsync(SimklHistory history, UserConfig userConfig, long embyUserId)
         {
+            var userToken = userConfig.userToken;
+
             try {
                 _logger.Info("Syncing History: " + _json.SerializeToString(history));
                 return _json.DeserializeFromStream<SyncHistoryResponse>(await _post("/sync/history", userToken, history));
             } catch (MediaBrowser.Model.Net.HttpException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
                 _logger.Error("Invalid user token " + userToken + ", deleting");
-                Plugin.Instance.deleteUserToken(userToken);
+
+                userConfig.userToken = null;
+
+                _userManager.SetTypedUserSetting(embyUserId, ConfigurationFactory.ConfigKey, userConfig);
                 throw new InvalidTokenException("Invalid user token " + userToken);
             }
         }

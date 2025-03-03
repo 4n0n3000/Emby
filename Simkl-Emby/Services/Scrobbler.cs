@@ -2,7 +2,7 @@
 using System.Threading;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq; 
+using System.Linq;
 
 using Simkl.Api;
 using Simkl.Api.Exceptions;
@@ -19,6 +19,7 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Dto;
 using Simkl.Configuration;
+using Simkl.Api.Objects;
 
 namespace Simkl.Services
 {
@@ -27,6 +28,7 @@ namespace Simkl.Services
         private readonly ISessionManager _sessionManager;   // Needed to set up de startPlayBack and endPlayBack functions
         private readonly ILogger _logger;
         private readonly IJsonSerializer _json;
+        private readonly IUserManager _userManager;
         //private readonly INotificationManager _notifications;
         private SimklApi _api;
         private Dictionary<string, string> lastScrobbled;   // Library ID of last scrobbled item
@@ -34,20 +36,51 @@ namespace Simkl.Services
 
         // public static Scrobbler Instance; Instance = this
         public Scrobbler(IJsonSerializer json, ISessionManager sessionManager, ILogManager logManager,
-            IHttpClient httpClient/*, INotificationManager notifications*/)
+            IHttpClient httpClient/*, INotificationManager notifications*/, IUserManager userManager)
         {
             _json = json;
             _sessionManager = sessionManager;
             _logger = logManager.GetLogger("Simkl Scrobbler");
-         //   _notifications = notifications;
-            _api = new SimklApi(json, _logger, httpClient);
-            lastScrobbled = new Dictionary<string,string>();
+            //   _notifications = notifications;
+            _api = new SimklApi(json, _logger, httpClient, userManager);
+            lastScrobbled = new Dictionary<string, string>();
             nextTry = DateTime.UtcNow;
+            _userManager = userManager;
         }
 
         public void Run()
         {
+            UpgradeDataIfNeeded();
             _sessionManager.PlaybackProgress += embyPlaybackProgress;
+        }
+
+        private void UpgradeDataIfNeeded()
+        {
+            // TODO: Delete this a couple weeks after the plugin has gotten updated, to avoid any erroneous upgrades from happening when they shouldn't.
+
+            var userConfigs = Plugin.Instance.Configuration.userConfigs;
+            if (userConfigs != null)
+            {
+                foreach (var userConfig in userConfigs)
+                {
+                    try
+                    {
+                        UpgradeData(userConfig);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.ErrorException("Error upgrading user config", ex);
+                    }
+                }
+
+                Plugin.Instance.Configuration.userConfigs = null;
+                Plugin.Instance.SaveConfiguration();
+            }
+        }
+
+        private void UpgradeData(UserConfig userConfig)
+        {
+            // what emby user does this belong to?
         }
 
         public void Dispose()
@@ -56,7 +89,8 @@ namespace Simkl.Services
             _api = null;
         }
 
-        public static bool canBeScrobbled(UserConfig config, SessionInfo session) {
+        public static bool canBeScrobbled(UserConfig config, SessionInfo session)
+        {
             float percentageWatched = (float)(session.PlayState.PositionTicks) / (float)(session.NowPlayingItem.RunTimeTicks) * 100f;
 
             // If percentage watched is below minimum, can't scrobble
@@ -80,17 +114,20 @@ namespace Simkl.Services
 
             return false;
         }*/
-        
+
         private async void embyPlaybackProgress(object sessions, PlaybackProgressEventArgs e)
         {
-            try{
+            try
+            {
                 string sid = e.PlaySessionId, uid = e.Session.UserId, npid = e.Session.NowPlayingItem.Id;
                 try
                 {
                     if (DateTime.UtcNow < nextTry) return;
                     nextTry = DateTime.UtcNow.AddSeconds(30);
 
-                    UserConfig userConfig = Plugin.Instance.PluginConfiguration.getByGuid(uid);
+                    var embyUserId = _userManager.GetInternalId(uid);
+
+                    var userConfig = (UserConfig)_userManager.GetTypedUserSetting(embyUserId, ConfigurationFactory.ConfigKey);
                     if (userConfig == null || userConfig.userToken == "")
                     {
                         _logger.Error("Can't scrobble: User " + e.Session.UserName + " not logged in (" + (userConfig == null) + ")");
@@ -112,7 +149,7 @@ namespace Simkl.Services
                         e.Session.NowPlayingItem.Path, sid);
 
                     _logger.Debug("Item: " + _json.SerializeToString(e.MediaInfo));
-                    var response = await _api.markAsWatched(e.MediaInfo, userConfig.userToken);
+                    var response = await _api.markAsWatched(e.MediaInfo, userConfig, embyUserId);
                     if (response.success)
                     {
                         _logger.Debug("Scrobbled without errors");
@@ -140,7 +177,8 @@ namespace Simkl.Services
                     _logger.Error(ex.StackTrace);
                 }
             }
-            catch (Exception expt){
+            catch (Exception expt)
+            {
                 _logger.Error("No object: " + expt.Message);
                 _logger.Error(expt.StackTrace);
             }

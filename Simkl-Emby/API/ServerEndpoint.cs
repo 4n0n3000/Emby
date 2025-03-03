@@ -22,14 +22,6 @@ namespace Simkl.Api
         public string user_code { get; set; }
     }
 
-    [Route("/Simkl/users/settings/{userId}", "GET")]
-    public class GetUserSettings : IReturn<UserSettings>
-    {
-        // Note: In the future, when we'll have config for more than one user, we'll use a parameter
-        [ApiMember(Name = "id", Description = "emby's user id", IsRequired = true, DataType = "Guid", ParameterType = "path", Verb = "GET")]
-        public string userId { get; set; }
-    }
-
     class ServerEndpoint : IService, IHasResultFactory
     {
         public IHttpResultFactory ResultFactory { get; set; }
@@ -54,12 +46,6 @@ namespace Simkl.Api
         public CodeStatusResponse Get(GetPinStatus request)
         {
             return _api.getCodeStatus(request.user_code).Result;
-        }
-
-        public UserSettings Get(GetUserSettings request)
-        {
-            _logger.Debug(_json.SerializeToString(request));
-            return _api.getUserSettings(Plugin.Instance.Configuration.getByGuid(request.userId).userToken).Result;
         }
     }
 }

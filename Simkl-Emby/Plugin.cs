@@ -15,6 +15,9 @@ namespace Simkl
 {
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
     {
+        public static string StaticId = "Simkl";
+        public static string StaticName = "Simkl";
+
         // public override string Name { get { return "Simkl TV Tracker"; } }
         // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/lambda-operator#expression-body-definition
         public override string Name => "Simkl TV Tracker";
@@ -34,8 +37,26 @@ namespace Simkl
             {
                 new PluginPageInfo
                 {
-                    Name = "Simkl",
-                    EmbeddedResourcePath = "Simkl.Configuration.configPage.html"
+                    Name = "simkl_admin",
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.simkladmin.html"
+                },
+                new PluginPageInfo
+                {
+                    Name = "simkljs",
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.simkl.js"
+                },
+                new PluginPageInfo
+                {
+                    Name = StaticName,
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.simkl.html",
+                    EnableInUserMenu = true,
+                    //EnableInMainMenu = true,
+                    FeatureId = StaticId
+                },
+                new PluginPageInfo
+                {
+                    Name = "simkladminjs",
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.simkladmin.js"
                 }
             };
 
@@ -47,13 +68,6 @@ namespace Simkl
 
         public Stream GetThumbImage() {
             return GetType().Assembly.GetManifestResourceStream("Simkl.emby_thumb.jpg");
-        }
-
-        public void deleteUserToken(string userToken) {
-            foreach (UserConfig config in Configuration.userConfigs) {
-                if (config.userToken == userToken) config.userToken = "";
-            }
-            SaveConfiguration();
         }
     }
 }
