@@ -21,6 +21,13 @@ namespace Simkl.Api
         [ApiMember(Name = "user_code", Description = "pin to be introduced by the user", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
         public string user_code { get; set; }
     }
+    
+    [Route("/Simkl/user/settings", "GET")]
+    public class GetUserSettings : IReturn<UserSettings>
+    {
+        [ApiMember(Name = "token", Description = "User token for authentication", IsRequired = true, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string token { get; set; }
+    }
 
     class ServerEndpoint : IService, IHasResultFactory
     {
@@ -46,6 +53,26 @@ namespace Simkl.Api
         public CodeStatusResponse Get(GetPinStatus request)
         {
             return _api.getCodeStatus(request.user_code).Result;
+        }
+        
+        public UserSettings Get(GetUserSettings request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.token))
+                {
+                    _logger.Error("No token provided for user settings request");
+                    throw new ArgumentNullException("token", "Token is required to fetch user settings");
+                }
+                
+                // Call the API method that already exists with the provided token
+                return _api.getUserSettings(request.token).Result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error retrieving user settings: " + ex.Message);
+                throw;
+            }
         }
     }
 }

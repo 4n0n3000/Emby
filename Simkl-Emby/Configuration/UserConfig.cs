@@ -12,6 +12,7 @@ namespace Simkl.Configuration
         public string userToken { get; set; }   // Is the user logged in
         public int scrobbleTimeout { get; set; } // Time between scrobbling tries
         public string guid { get; set; }    // Emby user id
+        public string userName { get; set; }    // Simkl username
 
         public UserConfig()
         {
@@ -22,6 +23,7 @@ namespace Simkl.Configuration
             this.min_length = 5;
             this.userToken = "";    // Todo: check if token is still valid
             this.scrobbleTimeout = 30;
+            this.userName = "";
         }
     }
 }

@@ -11,7 +11,7 @@
             <div class="loggingIn">
                 <h2>Logging In</h2>
                 <div class="loginText"></div>
-                <h3 idclass"loginPin"></h3>
+                <h3 class="loginPin"></h3>
                 <span class="loginSecondsRemaining">900</span> seconds remaining
                 <button onclick="SimklConfig.stopLoginProcess();" is="emby-button" type="button" class="raised button-cancel block"><span>Cancel</span></button>
             </div>
@@ -19,13 +19,13 @@
                 <h3>Hello again <span class="simklName">USERNAME</span>!</h3>
                 <button onclick="SimklConfig.logOut();" is="emby-button" type="button" class="raised button block"><span>Log Out</span></button>
                 <h2>Scrobbling options:</h2>
-                <div class="checkboxcontainer">
+                <div class="checkboxcontainer" style="padding-bottom: 20px;">
                     <label>
                         <input is="emby-checkbox" type="checkbox" class="scrobbleMovies" />
                         <span>Autoscrobbling Movies</span>
                     </label>
                 </div>
-                <div class="checkboxcontainer">
+                <div class="checkboxcontainer" style="padding-bottom: 20px;">
                     <label>
                         <input is="emby-checkbox" type="checkbox" class="scrobbleShows" />
                         <span>Autoscrobbling TV Shows</span>
